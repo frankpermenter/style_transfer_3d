@@ -6,7 +6,8 @@ import chainer.functions as cf
 import chainer.links as cl
 import neural_renderer
 import scipy.misc
-
+from functools import reduce
+from matplotlib import image as im
 
 class StyleTransferModel(chainer.Chain):
     def __init__(
@@ -39,15 +40,16 @@ class StyleTransferModel(chainer.Chain):
         self.vgg16 = cl.VGG16Layers()
 
         # load reference image
-        reference_image = scipy.misc.imread(filename_style)
-        reference_image = scipy.misc.imresize(reference_image, (image_size, image_size))
+        print(filename_style)
+        reference_image = im.imread(filename_style)
+        reference_image.resize((image_size, image_size))
         reference_image = reference_image.astype('float32') / 255.
-        reference_image = reference_image[:, :, :3].transpose((2, 0, 1))[None, :, :, :]
+        #reference_image = reference_image[:, :, :3].transpose((2, 0, 1))[None, :, :, :]
         reference_image = self.xp.array(reference_image)
         with chainer.no_backprop_mode():
             features_ref = [f.data for f in self.extract_style_feature(reference_image)]
         self.features_ref = features_ref
-        self.background_color = reference_image.mean((0, 2, 3))
+        self.background_color = reference_image.mean()
 
         with self.init_scope():
             # load .obj
@@ -78,7 +80,7 @@ class StyleTransferModel(chainer.Chain):
 
         style_features = []
         for feature in features:
-            scale = masks.shape[-1] / feature.shape[-1]
+            scale = int(masks.shape[-1] / feature.shape[-1])
             m = cf.average_pooling_2d(masks[:, None, :, :], scale, scale).data
             dim = feature.shape[1]
 
