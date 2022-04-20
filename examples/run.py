@@ -97,7 +97,7 @@ def run():
         images = model.renderer.render(*model.mesh.get_batch(1))
         image = images.data.get()[0].transpose((1, 2, 0))
         #scipy.misc.toimage(image, cmin=0, cmax=1).save('%s/_tmp_%04d.png' % (directory_output, num))
-        im.imsave('%s/_tmp_%04d.png' % (directory_output, num),image,cmap='gray')       
+        im.imsave('%s/_tmp_%04d.png' % (directory_output, num),image,vmin=0,vmax=1)       
 
     make_gif(directory_output, args.filename_output)
 

@@ -8,6 +8,9 @@ import neural_renderer
 import scipy.misc
 from functools import reduce
 from matplotlib import image as im
+import matplotlib.pyplot
+from PIL import Image
+import numpy as np
 
 class StyleTransferModel(chainer.Chain):
     def __init__(
@@ -41,15 +44,17 @@ class StyleTransferModel(chainer.Chain):
 
         # load reference image
         print(filename_style)
-        reference_image = im.imread(filename_style)
+        reference_image = Image.open(filename_style)
         reference_image.resize((image_size, image_size))
+        reference_image = np.array(reference_image)
         reference_image = reference_image.astype('float32') / 255.
-        #reference_image = reference_image[:, :, :3].transpose((2, 0, 1))[None, :, :, :]
+        reference_image = reference_image[:, :, :3].transpose((2, 0, 1))[None, :, :, :]
         reference_image = self.xp.array(reference_image)
         with chainer.no_backprop_mode():
             features_ref = [f.data for f in self.extract_style_feature(reference_image)]
         self.features_ref = features_ref
-        self.background_color = reference_image.mean()
+        #self.background_color = reference_image.mean()
+        self.background_color = reference_image.mean((0, 2, 3))
 
         with self.init_scope():
             # load .obj
@@ -81,6 +86,8 @@ class StyleTransferModel(chainer.Chain):
         style_features = []
         for feature in features:
             scale = int(masks.shape[-1] / feature.shape[-1])
+            #scale = masks.shape[-1] / feature.shape[-1]
+            #print(scale)
             m = cf.average_pooling_2d(masks[:, None, :, :], scale, scale).data
             dim = feature.shape[1]
 
